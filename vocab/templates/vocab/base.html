@@ -1,0 +1,54 @@
+{% load static %}<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}TOEIC単語帳{% endblock %}</title>
+  {# デザインは static/vocab/css/style.css にまとめている #}
+  <link rel="stylesheet" href="{% static 'vocab/css/style.css' %}">
+</head>
+<body>
+  <a class="skip-link" href="#main">本文へスキップ</a>
+
+  {# 今どのページにいるか（URLの名前）。ナビゲーションの強調表示に使う #}
+  {% with current=request.resolver_match.url_name %}
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="{% url 'vocab:word_list' %}">
+        <span class="brand-mark" aria-hidden="true">T</span>
+        TOEIC単語帳
+      </a>
+      <nav aria-label="メインメニュー">
+        <ul class="nav-list">
+          <li><a href="{% url 'vocab:word_list' %}"{% if current == 'word_list' or current == 'word_delete' %} aria-current="page"{% endif %}>単語一覧</a></li>
+          <li><a href="{% url 'vocab:review' %}"{% if current == 'review' %} aria-current="page"{% endif %}>復習する</a></li>
+          <li><a href="{% url 'vocab:dashboard' %}"{% if current == 'dashboard' %} aria-current="page"{% endif %}>ダッシュボード</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  {% endwith %}
+
+  <main id="main" class="container" tabindex="-1">
+    {% if messages %}
+      {# role="status": 画面の読み上げソフトにも結果を伝える #}
+      <ul class="messages" role="status">
+        {% for message in messages %}
+          <li class="alert alert-{{ message.level_tag|default:'info' }}">
+            <span class="alert-label">
+              {% if message.level_tag == 'success' %}完了{% elif message.level_tag == 'error' %}エラー{% elif message.level_tag == 'warning' %}注意{% else %}お知らせ{% endif %}
+            </span>
+            <span>{{ message }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">TOEIC単語帳 ― 間隔反復で効率よく単語を復習</div>
+  </footer>
+</body>
+</html>

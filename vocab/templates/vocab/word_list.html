@@ -1,0 +1,117 @@
+{% extends 'vocab/base.html' %}
+
+{% block title %}単語一覧 | TOEIC単語帳{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <h1>単語一覧</h1>
+    <p>単語を登録して、復習の進み具合を確認できます。</p>
+  </div>
+
+  {# 今日復習する単語がある場合は、ページ上部で知らせる #}
+  {% if due_count %}
+    <div class="today-banner">
+      <p>今日は {{ due_count }}語 の復習があります。</p>
+      <a class="btn btn-primary" href="{% url 'vocab:review' %}">復習を始める</a>
+    </div>
+  {% endif %}
+
+  {# ===== 単語の登録フォーム ===== #}
+  <section class="card" aria-labelledby="form-title">
+    <div class="card-header">
+      <h2 id="form-title">単語を登録</h2>
+      <p><span class="badge badge-required">必須</span> の項目は必ず入力してください</p>
+    </div>
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      {% if form.errors %}
+        {# role="alert": エラーが出たことを読み上げソフトにもすぐ伝える #}
+        <div class="alert alert-error" role="alert">
+          <span class="alert-label">エラー</span>
+          <p>入力内容を確認してください。赤く表示された項目に問題があります。</p>
+        </div>
+        {{ form.non_field_errors }}
+      {% endif %}
+
+      {% for field in form %}
+        <div class="form-field">
+          <label for="{{ field.id_for_label }}">
+            {{ field.label }}
+            {% if field.field.required %}
+              <span class="badge badge-required">必須</span>
+            {% else %}
+              <span class="badge badge-optional">任意</span>
+            {% endif %}
+          </label>
+          {{ field }}
+          {# エラーは入力欄のすぐ下に表示する（入力欄とは aria-describedby で自動的に関連付けられる） #}
+          {{ field.errors }}
+        </div>
+      {% endfor %}
+
+      <button type="submit" class="btn btn-primary">登録する</button>
+    </form>
+  </section>
+
+  {# ===== 登録済みの単語 ===== #}
+  <section class="card" aria-labelledby="list-title">
+    <div class="card-header">
+      <h2 id="list-title">登録した単語</h2>
+      <p>{{ words|length }}語</p>
+    </div>
+
+    {% if words %}
+      <ul class="word-list">
+        {% for word in words %}
+          <li class="word-item{% if word.next_review_at < due_cutoff %} is-due{% endif %}">
+            <article aria-labelledby="word-{{ word.pk }}">
+              <div class="word-head">
+                <h3 class="word-english" id="word-{{ word.pk }}" lang="en">{{ word.english }}</h3>
+                <span class="badge badge-level">復習レベル {{ word.review_level }}</span>
+                {% if word.next_review_at < due_cutoff %}
+                  <span class="badge badge-due">今日の復習対象</span>
+                {% endif %}
+              </div>
+              <p class="word-meaning">{{ word.meaning }}</p>
+              {% if word.example %}
+                <p class="example" lang="en">{{ word.example }}</p>
+              {% endif %}
+
+              <ul class="word-stats" aria-label="学習状況">
+                {% if word.review_count %}
+                  <li class="stat-accuracy">正答率{{ word.accuracy|floatformat:0 }}%</li>
+                  <li>復習{{ word.review_count }}回</li>
+                  <li>正解{{ word.correct_count }}回</li>
+                  <li>不正解{{ word.incorrect_count }}回</li>
+                {% else %}
+                  <li>未復習</li>
+                {% endif %}
+              </ul>
+              <p class="word-schedule">
+                次回復習予定: {{ word.next_review_at|date:"Y/m/d" }}
+                {% if word.review_count %}
+                  ／ 最終復習: {{ word.last_reviewed_at|date:"Y/m/d H:i" }}
+                {% endif %}
+              </p>
+
+              {# 削除は確認画面を挟む。誤操作しにくいよう、カードの右下に控えめに置く #}
+              <div class="word-actions">
+                <a class="btn btn-quiet-danger" href="{% url 'vocab:word_delete' word.pk %}"
+                   aria-label="「{{ word.english }}」を削除">削除</a>
+              </div>
+            </article>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="empty-state">
+        <p class="empty-state-title">まだ単語が登録されていません。</p>
+        <p>上のフォームに英単語と意味を入力して、最初の単語を登録しましょう。<br>
+          登録した単語は、すぐに「復習する」から復習できます。</p>
+        <a class="btn btn-secondary" href="#id_english">英単語の入力欄へ移動</a>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}

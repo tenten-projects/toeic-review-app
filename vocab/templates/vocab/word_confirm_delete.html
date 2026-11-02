@@ -1,0 +1,23 @@
+{% extends 'vocab/base.html' %}
+
+{% block title %}削除の確認 | TOEIC単語帳{% endblock %}
+
+{% block content %}
+  <section class="card" aria-labelledby="confirm-title">
+    <h1 id="confirm-title">削除の確認</h1>
+    <p class="confirm-target">
+      「<strong lang="en">{{ word.english }}</strong>（{{ word.meaning }}）」を削除しますか？
+    </p>
+    <div class="alert alert-warning">
+      <span class="alert-label">注意</span>
+      <p>この単語の復習履歴も一緒に削除され、元に戻せません。</p>
+    </div>
+    <form method="post">
+      {% csrf_token %}
+      <div class="btn-row">
+        <a class="btn btn-secondary" href="{% url 'vocab:word_list' %}">キャンセル</a>
+        <button type="submit" class="btn btn-danger">削除する</button>
+      </div>
+    </form>
+  </section>
+{% endblock %}

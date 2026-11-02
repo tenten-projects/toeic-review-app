@@ -1,0 +1,146 @@
+{% extends 'vocab/base.html' %}
+
+{% block title %}ダッシュボード | TOEIC単語帳{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <h1>ダッシュボード</h1>
+    <p>今日の学習と、これまでの復習の進み具合を確認できます。</p>
+  </div>
+
+  {% if not summary.total_words %}
+    <div class="alert alert-info">
+      <span class="alert-label">お知らせ</span>
+      <p>まだ単語が登録されていません。<a href="{% url 'vocab:word_list' %}">単語一覧</a>から登録すると、ここに学習状況が表示されます。</p>
+    </div>
+  {% endif %}
+
+  {# ===== 1. サマリー（カード形式） ===== #}
+  <section aria-labelledby="summary-title">
+    <h2 id="summary-title" class="visually-hidden">学習のサマリー</h2>
+    <ul class="summary-grid">
+      <li class="summary-card is-highlight">
+        <span class="summary-label">今日の残り復習</span>
+        <span class="summary-value">{{ summary.due_count }}<small>語</small></span>
+      </li>
+      <li class="summary-card">
+        <span class="summary-label">今日の復習回数</span>
+        <span class="summary-value">{{ summary.today_reviews }}<small>回</small></span>
+      </li>
+      <li class="summary-card">
+        <span class="summary-label">今日の正解回数</span>
+        <span class="summary-value">{{ summary.today_correct }}<small>回</small></span>
+      </li>
+      <li class="summary-card">
+        <span class="summary-label">今日の正答率</span>
+        {% if summary.today_accuracy is None %}
+          <span class="summary-value">—</span>
+          <span class="summary-note">まだ復習していません</span>
+        {% else %}
+          <span class="summary-value">{{ summary.today_accuracy|floatformat:0 }}<small>%</small></span>
+        {% endif %}
+      </li>
+      <li class="summary-card">
+        <span class="summary-label">登録単語数</span>
+        <span class="summary-value">{{ summary.total_words }}<small>語</small></span>
+      </li>
+      <li class="summary-card">
+        <span class="summary-label">累計復習回数</span>
+        <span class="summary-value">{{ summary.total_reviews }}<small>回</small></span>
+      </li>
+    </ul>
+  </section>
+
+  {% if summary.due_count %}
+    <p class="cta">
+      <a class="btn btn-primary" href="{% url 'vocab:review' %}">今日の復習を始める（残り{{ summary.due_count }}語）</a>
+    </p>
+  {% endif %}
+
+  {# ===== 2. 過去7日間の復習回数（HTMLとCSSだけの棒グラフ） ===== #}
+  <section class="card" aria-labelledby="daily-title">
+    <div class="card-header">
+      <h2 id="daily-title">過去7日間の復習回数</h2>
+      <p>棒の上の数字 = その日の復習回数</p>
+    </div>
+    <ul class="legend">
+      <li><span class="swatch swatch-correct" aria-hidden="true"></span>正解（塗りつぶし）</li>
+      <li><span class="swatch swatch-incorrect" aria-hidden="true"></span>不正解（斜線）</li>
+      <li><span class="swatch swatch-empty" aria-hidden="true"></span>点線 = 復習しなかった日</li>
+    </ul>
+
+    {# グラフは見た目用。読み上げソフトには下の表で同じ内容を伝える #}
+    <div class="bar-chart" aria-hidden="true">
+      {% for day in daily_reviews %}
+        <div class="bar-col{% if not day.total %} is-empty{% endif %}{% if day.is_today %} is-today{% endif %}"
+             title="{{ day.date|date:'n/j' }} 復習{{ day.total }}回（正解{{ day.correct }}・不正解{{ day.incorrect }}）">
+          <span class="bar-value">{{ day.total }}</span>
+          <div class="bar-area">
+            {% if day.total %}
+              {# 棒の高さ = 一番多い日を100%とした割合。中を正解・不正解の回数の比で分ける #}
+              <div class="bar-stack" style="height: {{ day.height }}%">
+                {% if day.incorrect %}<div class="bar-seg seg-incorrect" style="flex-grow: {{ day.incorrect }}"></div>{% endif %}
+                {% if day.correct %}<div class="bar-seg seg-correct" style="flex-grow: {{ day.correct }}"></div>{% endif %}
+              </div>
+            {% endif %}
+          </div>
+          <span class="bar-label">{% if day.is_today %}今日{% else %}{{ day.date|date:"n/j" }}{% endif %}</span>
+          <span class="bar-sub">{% if day.total %}○{{ day.correct }} ×{{ day.incorrect }}{% else %}&nbsp;{% endif %}</span>
+        </div>
+      {% endfor %}
+    </div>
+
+    {% if not summary.total_reviews %}
+      <p class="chart-note">まだ復習の記録がありません。復習すると、ここに日ごとの回数が表示されます。</p>
+    {% endif %}
+
+    <details class="data-details">
+      <summary>数値を表で見る</summary>
+      <div class="table-wrap">
+        <table class="data-table">
+          <caption class="visually-hidden">過去7日間の日別の復習回数</caption>
+          <thead>
+            <tr><th scope="col">日付</th><th scope="col">復習回数</th><th scope="col">正解</th><th scope="col">不正解</th></tr>
+          </thead>
+          <tbody>
+            {% for day in daily_reviews %}
+              <tr>
+                <th scope="row">{{ day.date|date:"n/j(D)" }}{% if day.is_today %}（今日）{% endif %}</th>
+                <td>{{ day.total }}回</td>
+                <td>{{ day.correct }}回</td>
+                <td>{{ day.incorrect }}回</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </details>
+  </section>
+
+  {# ===== 3. 復習レベル別の単語数（横向きの棒グラフ） ===== #}
+  <section class="card" aria-labelledby="level-title">
+    <div class="card-header">
+      <h2 id="level-title">復習レベル別の単語数</h2>
+      <p>棒の長さ = 全単語に対する割合</p>
+    </div>
+    <ul class="level-list">
+      {% for item in level_counts %}
+        <li class="hbar-row">
+          <span class="hbar-label">
+            レベル{{ item.level }}
+            <small>{% if item.interval_days %}次の復習まで{{ item.interval_days }}日{% else %}登録直後・思い出せなかった単語{% endif %}</small>
+          </span>
+          <div class="hbar-track" aria-hidden="true">
+            <div class="hbar-fill" style="width: {{ item.percent|stringformat:'.1f' }}%"></div>
+          </div>
+          <span class="hbar-value">{{ item.count }}語</span>
+        </li>
+      {% endfor %}
+    </ul>
+    <p class="note">
+      ※ 復習レベルは「次の復習までどれくらい間隔を空けるか」の目安です。
+      正解するとレベルが上がり、思い出せなかった場合はレベル0に戻ります。
+      レベルが高いほど続けて思い出せていることを表しますが、完全に覚えたことを保証するものではありません。
+    </p>
+  </section>
+{% endblock %}

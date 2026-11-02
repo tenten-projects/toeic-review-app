@@ -1,0 +1,59 @@
+# ==============================================
+# Gitで管理しない（GitHubに公開しない）ファイル
+# ==============================================
+
+# ---- Python が自動で作るファイル ----
+__pycache__/
+*.py[cod]
+*$py.class
+
+# ---- 仮想環境（各自のPCで作り直すもの） ----
+.venv/
+venv/
+env/
+
+# ---- データベース・ローカルの学習データ ----
+# 個人の学習記録が入るため公開しない。マイグレーションで誰でも作り直せる
+db.sqlite3
+db.sqlite3-journal
+db.sqlite3.bak-*
+*.sqlite3
+*.sqlite3-journal
+
+# ---- Django が作るファイル ----
+/staticfiles/
+/media/
+*.log
+
+# ---- 秘密情報・認証情報 ----
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+secrets.json
+credentials*.json
+local_settings.py
+
+# ---- テスト・開発ツールの一時ファイル ----
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ---- エディタ・ツールのローカル設定 ----
+.vscode/
+.idea/
+.claude/
+*.swp
+*~
+
+# ---- OS が作るファイル ----
+Thumbs.db
+desktop.ini
+.DS_Store

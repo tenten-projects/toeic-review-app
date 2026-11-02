@@ -1,0 +1,65 @@
+{% extends 'vocab/base.html' %}
+
+{% block title %}復習 | TOEIC単語帳{% endblock %}
+
+{% block content %}
+  <div class="review-status">
+    <h1>今日の復習</h1>
+    <p class="remaining">本日の復習対象: <strong>{{ due_count }}件</strong></p>
+  </div>
+
+  {% if word %}
+    <article class="card flashcard" aria-labelledby="question">
+      <span class="badge badge-level">復習レベル {{ word.review_level }}</span>
+      <p class="question" id="question" lang="en">{{ word.english }}</p>
+
+      {# <details> はクリックやEnterキーで中身を開閉できるHTML標準のタグ（JavaScript不要） #}
+      <details>
+        <summary class="btn btn-primary btn-lg">答えを見る</summary>
+        <div class="answer-body">
+          <p class="answer">{{ word.meaning }}</p>
+          {% if word.example %}
+            <p class="example" lang="en">{{ word.example }}</p>
+          {% endif %}
+
+          <form method="post" action="{% url 'vocab:review_answer' word.pk %}">
+            {% csrf_token %}
+            <fieldset class="judge">
+              <legend>この単語を覚えていましたか？</legend>
+              {# 色だけでなく「○」「×」の記号でも区別できるようにする #}
+              <div class="judge-buttons">
+                <button type="submit" name="result" value="correct" class="btn btn-success btn-lg">
+                  <span aria-hidden="true">○</span> 覚えていた
+                </button>
+                <button type="submit" name="result" value="incorrect" class="btn btn-danger btn-lg">
+                  <span aria-hidden="true">×</span> 覚えていなかった
+                </button>
+              </div>
+            </fieldset>
+          </form>
+        </div>
+      </details>
+    </article>
+
+  {% elif has_words %}
+    <section class="card done-card" aria-labelledby="done-title">
+      <div class="done-icon" aria-hidden="true">✓</div>
+      <h2 id="done-title">本日の復習は完了です</h2>
+      <p>本日復習すべき単語はありません。お疲れさまでした！</p>
+      {% if upcoming_word %}
+        <p>次の復習予定: {{ upcoming_word.next_review_at|date:"Y/m/d H:i" }}（<span lang="en">{{ upcoming_word.english }}</span>）</p>
+      {% endif %}
+      <div class="btn-row">
+        <a class="btn btn-primary" href="{% url 'vocab:dashboard' %}">ダッシュボードで学習状況を見る</a>
+        <a class="btn btn-secondary" href="{% url 'vocab:word_list' %}">単語を追加する</a>
+      </div>
+    </section>
+
+  {% else %}
+    <section class="card empty-state">
+      <p class="empty-state-title">復習できる単語がありません。</p>
+      <p>まずは単語一覧から、覚えたい英単語を登録してください。</p>
+      <a class="btn btn-primary" href="{% url 'vocab:word_list' %}">単語を登録する</a>
+    </section>
+  {% endif %}
+{% endblock %}
