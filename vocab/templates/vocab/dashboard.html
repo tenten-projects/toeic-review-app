@@ -11,7 +11,7 @@
   {% if not summary.total_words %}
     <div class="alert alert-info">
       <span class="alert-label">お知らせ</span>
-      <p>まだ単語が登録されていません。<a href="{% url 'vocab:word_list' %}">単語一覧</a>から登録すると、ここに学習状況が表示されます。</p>
+      <p>まだ単語・熟語が登録されていません。<a href="{% url 'vocab:word_list' %}">単語一覧</a>から登録すると、ここに学習状況が表示されます。</p>
     </div>
   {% endif %}
 
@@ -21,7 +21,7 @@
     <ul class="summary-grid">
       <li class="summary-card is-highlight">
         <span class="summary-label">今日の残り復習</span>
-        <span class="summary-value">{{ summary.due_count }}<small>語</small></span>
+        <span class="summary-value">{{ summary.due_count }}<small>件</small></span>
       </li>
       <li class="summary-card">
         <span class="summary-label">今日の復習回数</span>
@@ -41,8 +41,8 @@
         {% endif %}
       </li>
       <li class="summary-card">
-        <span class="summary-label">登録単語数</span>
-        <span class="summary-value">{{ summary.total_words }}<small>語</small></span>
+        <span class="summary-label">登録数（単語・熟語）</span>
+        <span class="summary-value">{{ summary.total_words }}<small>件</small></span>
       </li>
       <li class="summary-card">
         <span class="summary-label">累計復習回数</span>
@@ -53,7 +53,7 @@
 
   {% if summary.due_count %}
     <p class="cta">
-      <a class="btn btn-primary" href="{% url 'vocab:review' %}">今日の復習を始める（残り{{ summary.due_count }}語）</a>
+      <a class="btn btn-primary" href="{% url 'vocab:review' %}">今日の復習を始める（残り{{ summary.due_count }}件）</a>
     </p>
   {% endif %}
 
@@ -120,20 +120,20 @@
   {# ===== 3. 復習レベル別の単語数（横向きの棒グラフ） ===== #}
   <section class="card" aria-labelledby="level-title">
     <div class="card-header">
-      <h2 id="level-title">復習レベル別の単語数</h2>
-      <p>棒の長さ = 全単語に対する割合</p>
+      <h2 id="level-title">復習レベル別の登録数</h2>
+      <p>棒の長さ = 全体（単語・熟語）に対する割合</p>
     </div>
     <ul class="level-list">
       {% for item in level_counts %}
         <li class="hbar-row">
           <span class="hbar-label">
             レベル{{ item.level }}
-            <small>{% if item.interval_days %}次の復習まで{{ item.interval_days }}日{% else %}登録直後・思い出せなかった単語{% endif %}</small>
+            <small>{% if item.interval_days %}次の復習まで{{ item.interval_days }}日{% else %}登録直後・思い出せなかったもの{% endif %}</small>
           </span>
           <div class="hbar-track" aria-hidden="true">
             <div class="hbar-fill" style="width: {{ item.percent|stringformat:'.1f' }}%"></div>
           </div>
-          <span class="hbar-value">{{ item.count }}語</span>
+          <span class="hbar-value">{{ item.count }}件</span>
         </li>
       {% endfor %}
     </ul>

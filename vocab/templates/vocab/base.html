@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}TOEIC単語帳{% endblock %}</title>
   {# デザインは static/vocab/css/style.css にまとめている #}
-  <link rel="stylesheet" href="{% static 'vocab/css/style.css' %}">
+  {# 「?v=」はブラウザに古いCSSを使い回させないための印。CSSを変更したら数字を変える #}
+  <link rel="stylesheet" href="{% static 'vocab/css/style.css' %}?v=20261107b">
 </head>
 <body>
   <a class="skip-link" href="#main">本文へスキップ</a>
@@ -20,8 +21,9 @@
       </a>
       <nav aria-label="メインメニュー">
         <ul class="nav-list">
-          <li><a href="{% url 'vocab:word_list' %}"{% if current == 'word_list' or current == 'word_delete' %} aria-current="page"{% endif %}>単語一覧</a></li>
-          <li><a href="{% url 'vocab:review' %}"{% if current == 'review' %} aria-current="page"{% endif %}>復習する</a></li>
+          <li><a href="{% url 'vocab:word_list' %}"{% if current == 'word_list' or current == 'word_edit' or current == 'word_delete' %} aria-current="page"{% endif %}>単語一覧</a></li>
+          <li><a href="{% url 'vocab:review' %}"{% if current == 'review' %} aria-current="page"{% endif %}>今日の復習</a></li>
+          <li><a href="{% url 'vocab:random_setup' %}"{% if current == 'random_setup' or current == 'random_question' or current == 'random_result' %} aria-current="page"{% endif %}>ランダム復習</a></li>
           <li><a href="{% url 'vocab:dashboard' %}"{% if current == 'dashboard' %} aria-current="page"{% endif %}>ダッシュボード</a></li>
         </ul>
       </nav>

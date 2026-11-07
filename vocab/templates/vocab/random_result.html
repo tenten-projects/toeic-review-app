@@ -1,0 +1,35 @@
+{% extends 'vocab/base.html' %}
+
+{% block title %}ランダム復習の結果 | TOEIC単語帳{% endblock %}
+
+{% block content %}
+  <section class="card done-card" aria-labelledby="result-title">
+    <div class="done-icon" aria-hidden="true">✓</div>
+    <h1 id="result-title">ランダム復習の結果</h1>
+    <p>{{ state.word_ids|length }}問{% if state.is_all %}（全問）{% endif %}のセットが終わりました。お疲れさまでした！</p>
+
+    <dl class="result-grid">
+      <div class="result-item">
+        <dt>正解</dt>
+        <dd>{{ state.correct }}<small>問</small></dd>
+      </div>
+      <div class="result-item">
+        <dt>不正解</dt>
+        <dd>{{ state.incorrect }}<small>問</small></dd>
+      </div>
+      <div class="result-item">
+        <dt>正答率</dt>
+        <dd>{% if accuracy is None %}<span aria-label="記録なし">—</span>{% else %}{{ accuracy|floatformat:0 }}<small>%</small>{% endif %}</dd>
+      </div>
+    </dl>
+
+    {% if state.skipped %}
+      <p class="form-help">途中で削除された {{ state.skipped }}件 は出題しませんでした（結果には含めていません）。</p>
+    {% endif %}
+
+    <div class="btn-row">
+      <a class="btn btn-primary" href="{% url 'vocab:random_setup' %}">もう一度ランダム復習する</a>
+      <a class="btn btn-secondary" href="{% url 'vocab:dashboard' %}">ダッシュボードで学習状況を見る</a>
+    </div>
+  </section>
+{% endblock %}

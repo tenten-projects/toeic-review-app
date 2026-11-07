@@ -1,0 +1,38 @@
+{% extends 'vocab/base.html' %}
+
+{# 入力エラーで再表示したときは word.english が入力途中の値になるので、タイトルには使わない #}
+{% block title %}単語の編集 | TOEIC単語帳{% endblock %}
+
+{% block content %}
+  <section class="card" aria-labelledby="edit-title">
+    <div class="card-header">
+      <h1 id="edit-title">{% if word.entry_type == 'phrase' %}熟語を編集{% else %}単語を編集{% endif %}</h1>
+      <p><span class="badge badge-required">必須</span> の項目は必ず入力してください</p>
+    </div>
+
+    {# 編集しても変わらない情報を見せて、安心して直せるようにする #}
+    <p class="edit-status">
+      復習レベル {{ word.review_level }} ／ 次回復習予定 {{ word.next_review_at|date:"Y/m/d" }}
+      （編集しても、復習レベル・次回復習予定・復習履歴は変わりません）
+    </p>
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      {% if form.errors %}
+        <div class="alert alert-error" role="alert">
+          <span class="alert-label">エラー</span>
+          <p>入力内容を確認してください。赤く表示された項目に問題があります。保存はされていません。</p>
+        </div>
+      {% endif %}
+
+      {# 入力欄は登録フォームと共通（品詞ボタン・意味・熟語・同義語・例文） #}
+      {% include 'vocab/_word_form_fields.html' %}
+
+      <div class="btn-row">
+        <button type="submit" class="btn btn-primary">保存する</button>
+        <a class="btn btn-secondary" href="{% url 'vocab:word_list' %}">キャンセル</a>
+      </div>
+    </form>
+  </section>
+{% endblock %}

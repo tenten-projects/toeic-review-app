@@ -378,7 +378,120 @@ input:focus-visible, textarea:focus-visible { border-color: var(--color-focus); 
 }
 .word-stats .stat-accuracy { background: var(--color-primary-soft); color: var(--color-primary); font-weight: 700; }
 .word-schedule { font-size: 0.88rem; color: var(--color-muted); margin: 0 0 var(--space-3); }
-.word-actions { display: flex; justify-content: flex-end; border-top: 1px solid var(--color-border); padding-top: var(--space-2); }
+.word-actions { display: flex; justify-content: flex-end; gap: var(--space-2); border-top: 1px solid var(--color-border); padding-top: var(--space-2); }
+
+/* ---- 単語の中身（品詞別の意味・熟語・同義語）：一覧と復習画面で共通 ---- */
+.sense-list { margin: 0 0 var(--space-2); }
+.sense-row { display: flex; align-items: baseline; gap: var(--space-2); margin-bottom: var(--space-1); }
+.sense-row dt { flex-shrink: 0; }
+.sense-row dd { margin: 0; }
+.pos-badge {
+  display: inline-block;
+  min-width: 3.5em;
+  text-align: center;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  color: var(--color-primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.8;
+}
+.word-extra { margin: 0 0 var(--space-2); }
+.extra-title { color: var(--color-muted); font-size: 0.8rem; font-weight: 700; margin: 0 var(--space-2) var(--space-1) 0; }
+.phrase-list { list-style: none; margin: 0; padding: 0; }
+.phrase-list li { padding: var(--space-1) 0 var(--space-1) var(--space-3); border-left: 3px solid var(--color-primary-soft); margin-bottom: var(--space-1); }
+.phrase-expression { font-weight: 700; }
+.phrase-meaning { color: var(--color-muted); margin-left: var(--space-2); }
+.phrase-meaning::before { content: "→ "; }
+.synonyms { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); margin: 0 0 var(--space-2); }
+.synonyms .extra-title { margin: 0; }
+.synonym { background: var(--color-bg); border: 1px solid var(--color-border); border-radius: 999px; padding: 0 var(--space-3); font-size: 0.88rem; }
+
+/* 復習画面では答えを大きく、左寄せで読みやすく */
+.answer-body .sense-list,
+.answer-body .word-extra,
+.answer-body .synonyms { text-align: left; max-width: 32em; margin-left: auto; margin-right: auto; }
+.answer-body .sense-row dd { font-size: 1.3rem; font-weight: 700; }
+.answer-body .word-meaning { font-size: 1.5rem; font-weight: 700; }
+
+/* ---- 登録フォーム：品詞ボタン ---- */
+.pos-picker { border: 0; padding: 0; min-width: 0; }
+.pos-picker legend { display: flex; align-items: center; gap: var(--space-2); font-weight: 700; padding: 0; margin-bottom: var(--space-1); }
+.pos-buttons { position: relative; display: flex; flex-wrap: wrap; gap: var(--space-2); margin: var(--space-2) 0 var(--space-3); }
+/* チェックボックス本体は見えなくするが、キーボード操作（Tab・スペース）はできるように残す */
+/* 「.pos-buttons」を前に付けて、フォーム共通の「.form-field label { display: flex }」より優先させる
+   （これがないとボタンが1行に1つずつ縦に並んでしまう） */
+.pos-buttons .pos-toggle { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+.pos-buttons .pos-button {
+  display: inline-flex;
+  margin: 0;
+  align-items: center;
+  min-height: var(--tap-size);
+  padding: 0 var(--space-4);
+  border: 1px solid #a8b3c1;
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+.pos-buttons .pos-button:hover { background: var(--color-bg); }
+/* 選択中は青く塗り、文字の前に ✓ を付ける（色だけに頼らない） */
+.pos-toggle:checked + .pos-button { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+.pos-toggle:checked + .pos-button::before { content: "✓ "; }
+.pos-toggle:focus-visible + .pos-button { outline: 3px solid var(--color-focus); outline-offset: 2px; }
+
+/* 品詞の入力欄は、ボタンが選ばれているものだけ表示する（CSS の :has() を使用。JavaScript 不要） */
+.pos-input { margin-bottom: var(--space-3); }
+.pos-input label { font-weight: 600; font-size: 0.9rem; margin-bottom: var(--space-1); display: block; }
+.pos-empty-hint { display: none; color: var(--color-muted); font-size: 0.9rem; }
+@supports selector(:has(a)) {
+  .pos-input { display: none; }
+  .pos-picker:has(#id_pos_noun:checked) .pos-input-noun,
+  .pos-picker:has(#id_pos_verb:checked) .pos-input-verb,
+  .pos-picker:has(#id_pos_adjective:checked) .pos-input-adjective,
+  .pos-picker:has(#id_pos_adverb:checked) .pos-input-adverb,
+  .pos-picker:has(#id_pos_preposition:checked) .pos-input-preposition,
+  .pos-picker:has(#id_pos_conjunction:checked) .pos-input-conjunction,
+  .pos-picker:has(#id_pos_other:checked) .pos-input-other { display: block; }
+  .pos-picker:not(:has(.pos-toggle:checked)) .pos-empty-hint { display: block; }
+}
+
+/* 種類（英単語 / 熟語・イディオム）に合わせて、意味の入力欄を切り替える（CSS の :has() を使用） */
+.entry-phrase-only { display: none; }
+@supports selector(:has(a)) {
+  form:has(input[name="entry_type"][value="phrase"]:checked) .entry-word-only { display: none; }
+  form:has(input[name="entry_type"][value="phrase"]:checked) .entry-phrase-only { display: block; }
+}
+/* :has() が使えない古いブラウザでは、両方の入力欄を表示する（保存時は選んだ種類の欄だけを使う） */
+@supports not selector(:has(a)) {
+  .entry-phrase-only { display: block; }
+}
+.badge-phrase { background: #f3e8ff; color: #6b21a8; }
+
+/* 任意項目の折りたたみ */
+.optional-field {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.optional-field > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--tap-size);
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+.optional-field[open] > summary { border-bottom: 1px solid var(--color-border); margin-bottom: var(--space-3); }
+.optional-field .form-field label { font-weight: 600; }
+
+/* 編集画面：復習状況（編集しても変わらないもの）の表示 */
+.edit-status { color: var(--color-muted); font-size: 0.9rem; margin: 0 0 var(--space-4); }
 
 /* 削除確認 */
 .confirm-target { background: var(--color-bg); border-radius: var(--radius-sm); padding: var(--space-3) var(--space-4); }
@@ -451,6 +564,52 @@ input:focus-visible, textarea:focus-visible { border-color: var(--color-focus); 
   margin-bottom: var(--space-3);
 }
 .done-card .btn-row { justify-content: center; }
+
+/* ---------- ランダム復習 ---------- */
+/* 設定画面の選択ボタン（問題数・レベル）。品詞ボタンと同じ見た目にそろえる */
+.choice-group { border: 0; padding: 0; margin-left: 0; margin-right: 0; min-width: 0; }
+.choice-group legend { font-weight: 700; padding: 0; margin-bottom: var(--space-2); }
+.form-help-inline { font-weight: 400; color: var(--color-muted); font-size: 0.85rem; }
+.choice-buttons { position: relative; display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-2); }
+.choice-buttons input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+.choice-buttons .choice-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  min-height: var(--tap-size);
+  padding: 0 var(--space-4);
+  border: 1px solid #a8b3c1;
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+.choice-buttons .choice-button:hover { background: var(--color-bg); }
+.choice-buttons input:checked + .choice-button { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+.choice-buttons input:checked + .choice-button::before { content: "✓"; }
+.choice-buttons input:focus-visible + .choice-button { outline: 3px solid var(--color-focus); outline-offset: 2px; }
+.choice-count { font-size: 0.8rem; font-weight: 400; opacity: 0.85; }
+.weight-table { border-collapse: collapse; margin: var(--space-2) 0; font-size: 0.9rem; }
+.weight-table th, .weight-table td { border: 1px solid var(--color-border); padding: var(--space-1) var(--space-3); text-align: center; }
+.weight-table thead th, .weight-table tbody th { background: var(--color-bg); }
+.rule-title { font-size: 1rem; margin: 0 0 var(--space-1); }
+.rule-list { margin: 0; padding-left: 1.2em; color: var(--color-muted); font-size: 0.9rem; }
+
+/* 問題画面の進み具合 */
+.quiz-progress { display: block; width: 100%; height: 8px; margin: 0 0 var(--space-4); accent-color: var(--color-primary); }
+.quiz-quit { text-align: center; margin-top: var(--space-4); font-size: 0.9rem; }
+.flashcard .badge + .badge { margin-left: var(--space-1); }
+
+/* 結果画面 */
+.result-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); margin: var(--space-5) 0; }
+.result-item { background: var(--color-bg); border-radius: var(--radius-sm); padding: var(--space-3); }
+.result-item dt { color: var(--color-muted); font-size: 0.9rem; }
+.result-item dd { margin: 0; font-size: 2rem; font-weight: 700; }
+.result-item dd small { font-size: 0.9rem; margin-left: 2px; }
+.done-card .form-help { margin-bottom: var(--space-4); }
 
 /* ---------- 7. ダッシュボード ---------- */
 .summary-grid {
@@ -577,8 +736,8 @@ input:focus-visible, textarea:focus-visible { border-color: var(--color-focus); 
   .card { padding: var(--space-4); margin-bottom: var(--space-4); }
   .header-inner { flex-direction: column; align-items: stretch; }
   .nav-list { justify-content: space-between; }
-  .nav-list li { flex: 1; }
-  .nav-list a { justify-content: center; padding: 0 var(--space-2); font-size: 0.9rem; }
+  .nav-list li { flex: 1 1 auto; }  /* 4項目を、文字数に合わせた幅で1行に並べる */
+  .nav-list a { justify-content: center; padding: 0 var(--space-1); font-size: 0.85rem; white-space: nowrap; }
   .summary-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-2); }
   .summary-value { font-size: 1.6rem; }
   .flashcard { padding: var(--space-5) var(--space-4); }

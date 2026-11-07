@@ -8,6 +8,7 @@
 
 アルゴリズムを改良するときは、このファイルだけを変更すればよいようにしている。
 """
+import random
 from datetime import datetime, time, timedelta
 
 from django.db import transaction
@@ -79,17 +80,86 @@ def pick_next_word(now=None):
     return due_words(now).first()
 
 
-def record_review(word, is_correct, now=None):
+def record_review(word, is_correct, now=None, mode=ReviewLog.MODE_TODAY):
     """復習結果を履歴に追加し、単語のレベルと次回復習予定日時を更新する
 
     履歴の追加と単語の更新は「両方成功」か「両方失敗」になるよう、
     transaction.atomic() でひとまとめにしている。
+    mode は履歴に残す「復習の種類」（今日の復習 / ランダム復習）。計算方法は同じ。
     """
     if now is None:
         now = timezone.now()
 
     with transaction.atomic():
-        ReviewLog.objects.create(word=word, is_correct=is_correct, reviewed_at=now)
+        ReviewLog.objects.create(word=word, is_correct=is_correct, reviewed_at=now, mode=mode)
         word.review_level, word.next_review_at = calculate_next_review(word.review_level, is_correct, now)
         word.save(update_fields=['review_level', 'next_review_at'])
     return word
+
+
+# ---------------------------------------------------------------------------
+# ランダム復習
+# ---------------------------------------------------------------------------
+
+# 復習レベル → 出題されやすさ（重み）。低いレベルほど出やすく、レベル5でも0にはしない
+RANDOM_WEIGHTS = {0: 6, 1: 5, 2: 4, 3: 3, 4: 2, 5: 1}
+
+
+def weighted_sample(items, weight_of, count=None, rng=random):
+    """重み付きで、重複なしに items から count 個を選んで返す（count=None なら全部）
+
+    1つ選ぶたびに、選んだものを候補から外して次を選ぶ（くじを箱に戻さない引き方）。
+    そのため同じものは2回出ない。全部を選ぶ場合も「どれが選ばれるか」は変わらず、
+    重みは「どれが先に出やすいか（順番）」にだけ影響する。
+
+    rng: 乱数の出どころ。テストでは random.Random(固定の種) を渡して結果を再現できるようにする。
+    """
+    remaining = list(items)
+    if count is None or count > len(remaining):
+        count = len(remaining)
+
+    chosen = []
+    for _ in range(count):
+        weights = [weight_of(item) for item in remaining]
+        # 0以上「重みの合計」未満の数を1つ引き、それがどの区間に入るかで選ぶ
+        point = rng.random() * sum(weights)
+        for index, weight in enumerate(weights):
+            point -= weight
+            if point < 0:
+                break
+        chosen.append(remaining.pop(index))
+    return chosen
+
+
+def pick_random_words(levels, count=None, rng=random):
+    """ランダム復習で出題する単語のIDを、出題する順に並べて返す
+
+    levels: 対象にする復習レベルのリスト（例: [0, 1, 2]）
+    count:  問題数（None なら対象の全単語）。対象がそれより少なければ、ある分だけ返す
+    """
+    candidates = list(Word.objects.filter(review_level__in=levels).order_by('pk').values_list('pk', 'review_level'))
+    picked = weighted_sample(candidates, lambda c: RANDOM_WEIGHTS[c[1]], count, rng)
+    return [pk for pk, _level in picked]
+
+
+def record_random_review(word, is_correct, now=None):
+    """ランダム復習の結果を記録する（案B）
+
+    - 今日の復習対象の単語            → 今日の復習と同じルールで更新する
+    - 予定日より前の単語で「覚えていた」 → 履歴だけ残し、レベルと次回復習日は変えない
+      （予定より早く思い出せただけなので、間隔を延ばす根拠としては弱いため）
+    - 予定日より前の単語で「覚えていなかった」→ 今日の復習と同じくレベル0・翌日に戻す
+      （忘れていることが分かったので、予定を待たずに復習し直す）
+
+    戻り値: レベルと次回復習日を更新したら True、履歴だけ残したら False
+    """
+    if now is None:
+        now = timezone.now()
+
+    is_due = word.next_review_at < due_cutoff(now)
+    if is_due or not is_correct:
+        record_review(word, is_correct, now, mode=ReviewLog.MODE_RANDOM)
+        return True
+
+    ReviewLog.objects.create(word=word, is_correct=True, reviewed_at=now, mode=ReviewLog.MODE_RANDOM)
+    return False

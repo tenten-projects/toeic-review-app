@@ -1,0 +1,51 @@
+{# 単語の中身（品詞別の意味・熟語・同義語・例文）の表示。単語一覧と復習画面で使い回す #}
+
+{% if word.entry_type == 'phrase' %}
+  {# 熟語・イディオムは品詞を使わないので、意味だけを並べる #}
+  <p class="word-meaning">{% for sense in word.senses.all %}{{ sense.meaning }}{% if not forloop.last %}、{% endif %}{% empty %}{{ word.meaning }}{% endfor %}</p>
+{% else %}
+{% with groups=word.grouped_senses %}
+  {% if groups %}
+    <dl class="sense-list">
+      {% for group in groups %}
+        <div class="sense-row">
+          <dt><span class="pos-badge">{{ group.label }}</span></dt>
+          <dd>{{ group.meanings|join:"、" }}</dd>
+        </div>
+      {% endfor %}
+    </dl>
+  {% else %}
+    {# 品詞別の意味がない単語（古い形式のデータ）は、意味の要約をそのまま表示する #}
+    <p class="word-meaning">{{ word.meaning }}</p>
+  {% endif %}
+{% endwith %}
+{% endif %}
+
+{% with phrases=word.phrases.all %}
+  {% if phrases %}
+    <div class="word-extra">
+      <p class="extra-title">熟語・関連表現</p>
+      <ul class="phrase-list">
+        {% for phrase in phrases %}
+          <li>
+            <span class="phrase-expression" lang="en">{{ phrase.expression }}</span>
+            {% if phrase.meaning %}<span class="phrase-meaning">{{ phrase.meaning }}</span>{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+{% endwith %}
+
+{% with synonyms=word.synonym_list %}
+  {% if synonyms %}
+    <p class="synonyms">
+      <span class="extra-title">同義語</span>
+      {% for synonym in synonyms %}<span class="synonym" lang="en">{{ synonym }}</span>{% endfor %}
+    </p>
+  {% endif %}
+{% endwith %}
+
+{% if word.example %}
+  <p class="example" lang="en">{{ word.example }}</p>
+{% endif %}

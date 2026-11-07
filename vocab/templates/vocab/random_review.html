@@ -1,0 +1,49 @@
+{% extends 'vocab/base.html' %}
+
+{% block title %}ランダム復習 {{ number }}/{{ total }}問 | TOEIC単語帳{% endblock %}
+
+{% block content %}
+  <div class="review-status">
+    <h1>ランダム復習</h1>
+    <p class="remaining">
+      <strong>{{ number }}/{{ total }}問</strong>{% if state.is_all %}（全問：対象をすべて出題）{% endif %}
+    </p>
+  </div>
+  {# 進み具合のバー（読み上げソフト向けには上の「3/10問」で伝わるので、バー自体は飾り） #}
+  <progress class="quiz-progress" max="{{ total }}" value="{{ number|add:'-1' }}" aria-hidden="true"></progress>
+
+  <article class="card flashcard" aria-labelledby="question">
+    {% if word.entry_type == 'phrase' %}<span class="badge badge-phrase">熟語</span>{% endif %}
+    <span class="badge badge-level">復習レベル {{ word.review_level }}</span>
+    {% if is_due %}<span class="badge badge-due">今日の復習対象</span>{% endif %}
+    <p class="question" id="question" lang="en">{{ word.english }}</p>
+
+    <details>
+      <summary class="btn btn-primary btn-lg">答えを見る</summary>
+      <div class="answer-body">
+        {% include 'vocab/_word_details.html' %}
+
+        <form method="post" action="{% url 'vocab:random_answer' %}">
+          {% csrf_token %}
+          {# どのセットの何問目への回答かを一緒に送る。今の状態と合わない回答（再送信など）は記録しない #}
+          <input type="hidden" name="set_id" value="{{ state.set_id }}">
+          <input type="hidden" name="position" value="{{ state.position }}">
+          <input type="hidden" name="word_id" value="{{ word.pk }}">
+          <fieldset class="judge">
+            <legend>この{% if word.entry_type == 'phrase' %}熟語{% else %}単語{% endif %}を覚えていましたか？</legend>
+            <div class="judge-buttons">
+              <button type="submit" name="result" value="correct" class="btn btn-success btn-lg">
+                <span aria-hidden="true">○</span> 覚えていた
+              </button>
+              <button type="submit" name="result" value="incorrect" class="btn btn-danger btn-lg">
+                <span aria-hidden="true">×</span> 覚えていなかった
+              </button>
+            </div>
+          </fieldset>
+        </form>
+      </div>
+    </details>
+  </article>
+
+  <p class="quiz-quit"><a href="{% url 'vocab:random_setup' %}">設定に戻る（このセットを中断）</a></p>
+{% endblock %}

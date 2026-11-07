@@ -1,0 +1,89 @@
+{% extends 'vocab/base.html' %}
+
+{% block title %}ランダム復習 | TOEIC単語帳{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <h1>ランダム復習</h1>
+    <p>復習予定に関係なく、選んだレベルの単語・熟語からランダムに出題します。</p>
+  </div>
+
+  {% if word_count %}
+    <section class="card" aria-labelledby="setup-title">
+      <h2 id="setup-title">出題の設定</h2>
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        {% if form.errors %}
+          <div class="alert alert-error" role="alert">
+            <span class="alert-label">エラー</span>
+            <p>{% if form.non_field_errors %}{{ form.non_field_errors.0 }}{% else %}設定を確認してください。{% endif %}</p>
+          </div>
+        {% endif %}
+
+        {# ----- 問題数（10問・30問・全問から1つ） ----- #}
+        <fieldset class="form-field choice-group">
+          <legend>問題数</legend>
+          <div class="choice-buttons">
+            {% for option in form.count %}
+              {{ option.tag }}<label for="{{ option.id_for_label }}" class="choice-button">{{ option.choice_label }}</label>
+            {% endfor %}
+          </div>
+          <p class="form-help">
+            対象が問題数より少ないときは、ある分だけ出題します。
+            <strong>「全問」を選ぶと、対象をすべて1回ずつ出題します</strong>
+            （下の「出題されやすさ」は、出題の順番にだけ影響します）。
+          </p>
+        </fieldset>
+
+        {# ----- 復習レベル（複数選択。最初は全レベル選択） ----- #}
+        <fieldset class="form-field choice-group">
+          <legend>復習レベル <span class="form-help-inline">（複数選択できます）</span></legend>
+          <div class="choice-buttons">
+            {% for option, count in level_options %}
+              {{ option.tag }}<label for="{{ option.id_for_label }}" class="choice-button">{{ option.choice_label }}<span class="choice-count">{{ count }}件</span></label>
+            {% endfor %}
+          </div>
+          {{ form.levels.errors }}
+        </fieldset>
+
+        {# 出題されやすさ（重み）の説明。低いレベルほど出やすいが、高いレベルも0にはしない #}
+        <details class="optional-field">
+          <summary>出題されやすさについて</summary>
+          <p class="form-help">
+            まだ覚えきれていない単語（低いレベル）ほど出題されやすくしています。
+            同じセットの中で、同じ単語が2回出ることはありません。
+          </p>
+          <table class="weight-table">
+            <caption class="visually-hidden">復習レベルごとの出題されやすさ</caption>
+            <thead>
+              <tr><th scope="col">レベル</th>{% for level in weights %}<th scope="col">Lv.{{ level }}</th>{% endfor %}</tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">重み</th>{% for level, weight in weights.items %}<td>{{ weight }}</td>{% endfor %}</tr>
+            </tbody>
+          </table>
+          <p class="form-help">例：Lv.0 の単語は、Lv.5 の単語の6倍選ばれやすくなります。</p>
+        </details>
+
+        <div class="form-field">
+          <h3 class="rule-title">復習レベルへの反映</h3>
+          <ul class="rule-list">
+            <li>今日の復習対象の単語：「今日の復習」と同じルールでレベルと次回復習日を更新</li>
+            <li>復習予定日より前の単語で「覚えていた」：記録だけ残し、レベルと次回復習日は変えない</li>
+            <li>復習予定日より前の単語で「覚えていなかった」：レベル0に戻し、翌日に復習予定を入れる</li>
+          </ul>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg">復習を開始する</button>
+      </form>
+    </section>
+  {% else %}
+    <section class="card empty-state">
+      <p class="empty-state-title">復習できる単語・熟語がありません。</p>
+      <p>まずは単語一覧から、覚えたい英単語や熟語を登録してください。</p>
+      <a class="btn btn-primary" href="{% url 'vocab:word_list' %}">単語を登録する</a>
+    </section>
+  {% endif %}
+{% endblock %}

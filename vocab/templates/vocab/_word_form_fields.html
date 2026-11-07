@@ -1,0 +1,84 @@
+{# 単語の登録フォームの入力欄（段階3の編集画面でも使い回す） #}
+
+{# ----- 種類：英単語 か 熟語・イディオム か（選んだほうの意味の入力欄だけを表示する） ----- #}
+<fieldset class="form-field choice-group entry-type">
+  <legend>種類</legend>
+  <div class="choice-buttons">
+    {% for option in form.entry_type %}
+      {{ option.tag }}<label for="{{ option.id_for_label }}" class="choice-button">{{ option.choice_label }}</label>
+    {% endfor %}
+  </div>
+  <p class="form-help">熟語・イディオム（例: select A from B）も、英単語と同じように1問として復習できます。</p>
+</fieldset>
+
+{# ----- 英語（単語または熟語） ----- #}
+<div class="form-field">
+  <label for="{{ form.english.id_for_label }}">
+    {{ form.english.label }} <span class="badge badge-required">必須</span>
+  </label>
+  {{ form.english }}
+  {{ form.english.errors }}
+</div>
+
+{# ----- 熟語・イディオムの意味（品詞は選ばない） ----- #}
+<div class="form-field entry-phrase-only">
+  <label for="{{ form.phrase_meanings.id_for_label }}">
+    {{ form.phrase_meanings.label }} <span class="badge badge-required">必須</span>
+  </label>
+  {{ form.phrase_meanings }}
+  {{ form.phrase_meanings.errors }}
+</div>
+
+{# ----- 英単語の品詞別の意味：ボタン（チェックボックス）を押した品詞の入力欄だけが開く ----- #}
+<fieldset class="form-field pos-picker entry-word-only">
+  <legend>意味 <span class="badge badge-required">必須</span></legend>
+  <p class="form-help">品詞を選ぶと入力欄が開きます。複数の品詞を選べます。意味は1行に1つ入力してください。</p>
+
+  <div class="pos-buttons">
+    {% for pos in form.pos_fields %}
+      {{ pos.toggle }}<label for="{{ pos.toggle.id_for_label }}" class="pos-button">{{ pos.label }}</label>
+    {% endfor %}
+  </div>
+
+  {# 意味が1つもないときのエラーは、この欄のすぐ下に表示する #}
+  {{ form.non_field_errors }}
+  <p class="pos-empty-hint">まだ品詞が選ばれていません。上のボタンから品詞を選んでください。</p>
+
+  <div class="pos-inputs">
+    {% for pos in form.pos_fields %}
+      <div class="pos-input pos-input-{{ pos.code }}">
+        <label for="{{ pos.meanings.id_for_label }}">{{ pos.meanings.label }}</label>
+        {{ pos.meanings }}
+        {{ pos.meanings.errors }}
+      </div>
+    {% endfor %}
+  </div>
+</fieldset>
+
+{# ----- 任意の項目：必要なときだけ開く（入力済み・エラーがあるときは最初から開く） ----- #}
+<details class="optional-field"{% if form.phrases.value or form.phrases.errors %} open{% endif %}>
+  <summary>熟語・関連表現を追加 <span class="badge badge-optional">任意</span></summary>
+  <div class="form-field">
+    <label for="{{ form.phrases.id_for_label }}">{{ form.phrases.label }}（1行に1つ「表現 = 意味」）</label>
+    {{ form.phrases }}
+    {{ form.phrases.errors }}
+  </div>
+</details>
+
+<details class="optional-field"{% if form.synonyms.value or form.synonyms.errors %} open{% endif %}>
+  <summary>同義語を追加 <span class="badge badge-optional">任意</span></summary>
+  <div class="form-field">
+    <label for="{{ form.synonyms.id_for_label }}">{{ form.synonyms.label }}（カンマ区切り）</label>
+    {{ form.synonyms }}
+    {{ form.synonyms.errors }}
+  </div>
+</details>
+
+<details class="optional-field"{% if form.example.value or form.example.errors %} open{% endif %}>
+  <summary>例文を追加 <span class="badge badge-optional">任意</span></summary>
+  <div class="form-field">
+    <label for="{{ form.example.id_for_label }}">{{ form.example.label }}</label>
+    {{ form.example }}
+    {{ form.example.errors }}
+  </div>
+</details>

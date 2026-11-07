@@ -10,7 +10,7 @@
     </p>
     <div class="alert alert-warning">
       <span class="alert-label">注意</span>
-      <p>この単語の復習履歴も一緒に削除され、元に戻せません。</p>
+      <p>この{% if word.entry_type == 'phrase' %}熟語{% else %}単語{% endif %}の復習履歴も一緒に削除され、元に戻せません。</p>
     </div>
     <form method="post">
       {% csrf_token %}
