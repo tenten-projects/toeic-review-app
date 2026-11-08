@@ -391,7 +391,7 @@ python manage.py test vocab
 
 ```powershell
 # 1. リポジトリを取得してフォルダに移動
-git clone <このリポジトリのURL>
+git clone https://github.com/tenten-projects/toeic-review-app.git
 cd toeic-review-app
 
 # 2. 仮想環境を作成して有効化
